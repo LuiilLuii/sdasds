@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#1E1A17">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Corre do Artista">
+    <meta name="description" content="Comparador de preços de materiais de arte para artistas baianos. Modernismo tropical, químicos cerâmicos e fornos.">
+
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Corre%20do%20Artista%20Baiano%22%2C%22short_name%22%3A%22Corre%20Arte%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23D4C3A8%22%2C%22theme_color%22%3A%22%231E1A17%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20192%20192'%3E%3Crect%20width%3D'192'%20height%3D'192'%20rx%3D'38'%20fill%3D'%23D4413B'%2F%3E%3Ccircle%20cx%3D'96'%20cy%3D'96'%20r%3D'55'%20fill%3D'%23F3B33D'%2F%3E%3Ctext%20x%3D'96'%20y%3D'115'%20text-anchor%3D'middle'%20font-size%3D'65'%3E%F0%9F%8E%A8%3C%2Ftext%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23D4413B'/%3E%3Ccircle cx='50' cy='50' r='30' fill='%23F3B33D'/%3E%3Ctext x='50' y='65' text-anchor='middle' font-size='40'%3E🎨%3C/text%3E%3C/svg%3E">
+
+    <title>Corre do Artista Baiano · GitHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Alata&family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap');
+
+        :root {
+            --vermelhao: #D4413B;
+            --amarelo-tarsila: #F3B33D;
+            --azul-anita: #3B6B7D;
+            --verde-floresta: #2D5A4B;
+            --rosa-brasil: #E08B9C;
+            --laranja-terra: #D4652B;
+            --cinza-pedra: #8B7D71;
+            --branco-cal: #F9F3E8;
+            --preto-carvao: #1E1A17;
+            --safe-bottom: env(safe-area-inset-bottom, 14px);
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        input, select, textarea {
+            -webkit-user-select: auto;
+            user-select: auto;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(145deg, #E8D5C4 0%, #D4C3A8 30%, #C5B59A 60%, #E0CFB8 100%);
+            background-attachment: fixed;
+            color: var(--preto-carvao);
+            padding-bottom: calc(78px + var(--safe-bottom));
+            overflow-x: hidden;
+            position: relative;
+            margin: 0;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 15% 20%, rgba(212, 65, 59, 0.10) 0%, transparent 55%),
+                radial-gradient(ellipse at 85% 75%, rgba(59, 107, 125, 0.10) 0%, transparent 55%),
+                radial-gradient(ellipse at 50% 50%, rgba(243, 179, 61, 0.06) 0%, transparent 70%),
+                radial-gradient(circle at 30% 60%, rgba(224, 139, 156, 0.07) 0%, transparent 45%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        h1, h2, h3, .brand-font {
+            font-family: 'Fredoka One', cursive;
+            letter-spacing: 0.3px;
+        }
+        .alata { font-family: 'Alata', sans-serif; }
+
+        .card-tarsila {
+            background: rgba(249, 243, 232, 0.92);
+            backdrop-filter: blur(6px);
+            border-radius: 20px;
+            border: 2.5px solid var(--amarelo-tarsila);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(212,65,59,0.12);
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .card-tarsila::after {
+            content: '';
+            position: absolute;
+            top: -30px; right: -30px;
+            width: 80px; height: 80px;
+            background: var(--amarelo-tarsila);
+            opacity: 0.08;
+            border-radius: 50%;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+        .card-tarsila:active {
+            transform: scale(0.96);
+            border-color: var(--vermelhao);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        .card-tarsila:active::after { opacity: 0.16; transform: scale(1.4); }
+
+        .btn-antropofagico {
+            background: var(--vermelhao);
+            color: var(--branco-cal);
+            font-family: 'Alata', sans-serif;
+            font-size: 0.9rem;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            padding: 10px 22px;
+            letter-spacing: 0.4px;
+            min-height: 46px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 0 #9B2A24;
+            transition: all 0.15s;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .btn-antropofagico:active {
+            background: var(--laranja-terra);
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #9B2A24;
+        }
+
+        .btn-anita {
+            background: var(--azul-anita);
+            color: #fff;
+            font-family: 'Alata', sans-serif;
+            font-size: 0.85rem;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 0 #1F4A57;
+            transition: all 0.15s;
+            font-weight: 700;
+        }
+        .btn-anita:active { transform: translateY(3px); box-shadow: 0 1px 0 #1F4A57; }
+
+        .badge-store {
+            font-size: 0.6rem;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-weight: 800;
+            color: #fff;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+        .store-ml { background: #FFE600; color: #333; }
+        .store-amazon { background: #FF9900; }
+        .store-shopee { background: #EE4D2D; }
+        .store-ali { background: #FF4747; }
+        .store-local { background: var(--verde-floresta); border: 1.5px dashed var(--amarelo-tarsila); }
+        .store-kalunga { background: #0054a6; }
+
+        .preco-destaque {
+            color: var(--vermelhao);
+            font-weight: 900;
+            font-size: 1.5rem;
+            font-family: 'Fredoka One', cursive;
+        }
+
+        .chip-modernista {
+            background: rgba(255,255,255,0.75);
+            border: 2px solid var(--rosa-brasil);
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-weight: 800;
+            font-size: 0.7rem;
+            color: var(--preto-carvao);
+            transition: all 0.2s;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .chip-modernista.active {
+            background: var(--vermelhao);
+            color: #fff;
+            border-color: var(--vermelhao);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: var(--preto-carvao);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 4px 0 calc(4px + var(--safe-bottom));
+            z-index: 100;
+            border-top: 3px solid var(--amarelo-tarsila);
+            box-shadow: 0 -6px 22px rgba(0,0,0,0.35);
+        }
+        .bottom-nav button {
+            background: none; border: none;
+            color: #b8a48e;
+            font-size: 0.6rem; font-weight: 800;
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            padding: 5px 8px; border-radius: 16px;
+            transition: all 0.2s; cursor: pointer; min-width: 48px;
+        }
+        .bottom-nav button i { font-size: 1.25rem; }
+        .bottom-nav button.active-nav {
+            color: var(--amarelo-tarsila);
+            background: rgba(243,179,61,0.15);
+            transform: translateY(-5px);
+        }
+
+        #mapid { height: 340px; border-radius: 20px; border: 3px solid var(--azul-anita); z-index: 1; }
+
+        @media (min-width: 768px) {
+            body { padding-bottom: 20px; }
+            .bottom-nav { display: none; }
+        }
+
+        .linha-tarsila {
+            height: 3px;
+            background: repeating-linear-gradient(90deg, var(--amarelo-tarsila) 0px, var(--amarelo-tarsila) 14px, var(--vermelhao) 14px, var(--vermelhao) 28px);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative z-[1]">
+
+    <!-- CABEÇALHO -->
+    <header class="bg-[#1E1A17] text-[#F9F3E8] px-4 py-3 shadow-2xl sticky top-0 z-40 border-b-[5px] border-[#F3B33D]" style="background-image: repeating-linear-gradient(45deg, rgba(212,65,59,0.12) 0px, rgba(212,65,59,0.12) 6px, transparent 6px, transparent 18px);">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <div class="w-12 h-12 rounded-full bg-[#D4413B] flex items-center justify-center shadow-lg">
+                        <span class="text-3xl">🎨</span>
+                    </div>
+                    <div class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#F3B33D]"></div>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl m-0 tracking-wide text-[#F3B33D] brand-font">Corre do Artista</h1>
+                    <p class="text-[0.6rem] text-[#E08B9C] -mt-1 flex items-center gap-1 font-bold">
+                        <span class="inline-block w-3 h-3 rounded-full bg-[#F3B33D] opacity-70"></span> Salvador · Bahia · Modernismo Tropical
+                    </p>
+                </div>
+            </div>
+            <button id="btn-instalar" class="hidden bg-[#F3B33D] text-[#1E1A17] px-4 py-2 rounded-full text-[0.65rem] font-extrabold active:scale-95 transition-transform alata" onclick="instalarApp()">
+                <i class="fa-solid fa-download mr-1"></i> Instalar
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-3 sm:px-4 md:px-6 pt-5 pb-2 relative z-[1]">
+
+        <!-- MANIFESTO -->
+        <div class="mb-5 p-5 card-tarsila border-l-[7px] border-l-[#D4413B] relative">
+            <div class="absolute top-0 right-0 w-20 h-20 rounded-bl-full bg-[#F3B33D] opacity-10 pointer-events-none"></div>
+            <div class="flex flex-col sm:flex-row gap-4 items-center relative z-10">
+                <div class="text-5xl">🌴</div>
+                <div class="flex-1">
+                    <h2 class="text-2xl mb-2 text-[#D4413B]">Antropofagia do Preço Justo</h2>
+                    <p class="text-sm text-gray-700 leading-relaxed">
+                        Devoramos os preços abusivos e regurgitamos só o que presta. 
+                        Material de arte, química de cerâmica, gráfica e forno pra queimar — tudo num lugar só.
+                        <span class="bg-[#F3B33D] text-[#1E1A17] px-2 py-0.5 rounded-full text-[0.6rem] font-black ml-1">Modo Tropical Ativado</span>
+                    </p>
+                </div>
+                <div class="bg-[#FEF9E7] p-3 rounded-2xl text-center min-w-[85px] border-2 border-dashed border-[#D4413B]">
+                    <p class="text-[0.6rem] text-gray-500">Já economizamos</p>
+                    <p class="text-2xl font-black text-[#2D5A4B]">+R$50</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- DESTAQUE -->
+        <div class="mb-6 p-5 card-tarsila relative overflow-hidden" style="border-color: var(--laranja-terra);">
+            <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[#F3B33D] opacity-12 pointer-events-none"></div>
+            <div class="absolute top-0 right-0 bg-[#D4413B] text-white px-5 py-1.5 rounded-bl-2xl font-black text-[0.65rem] z-10 shadow-lg alata">
+                <i class="fa-solid fa-star mr-1"></i> DESTAQUE
+            </div>
+            <div class="flex flex-col sm:flex-row gap-5 items-center relative z-10">
+                <div class="w-full sm:w-2/5 bg-white rounded-2xl p-4 flex items-center justify-center border-2 border-dashed border-[#D4413B] shadow-inner">
+                    <span class="text-8xl">📜</span>
+                </div>
+                <div>
+                    <span class="inline-block bg-[#2D5A4B] text-white text-[0.6rem] px-3 py-1 rounded-full font-black mb-2">R$ 42 mais barato que importado</span>
+                    <h2 class="text-2xl mb-1 text-[#D4413B]">Bloco Aquarela Montval 200g A4</h2>
+                    <p class="text-gray-700 text-sm mb-2">Papel celulose nacional. Aguenta lavagem, aguenta tudo.</p>
+                    <div class="flex items-end gap-2 mb-3 flex-wrap">
+                        <span class="preco-destaque">R$ 32,90</span>
+                        <span class="line-through text-gray-400 text-xs mb-1">R$ 58,00</span>
+                        <span class="badge-store store-local"><i class="fa-solid fa-map-pin"></i> Salvador</span>
+                    </div>
+                    <button class="btn-antropofagico text-sm px-5 py-2" onclick="showDetails('papel-nacional')">Ver Ofertas</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILTROS -->
+        <div class="flex flex-wrap justify-between items-end mb-3 gap-2">
+            <h2 class="text-xl brand-font text-[#D4413B]" id="section-title">🌿 Todos os Materiais</h2>
+            <select id="sort-select" class="p-2.5 border-2 rounded-2xl bg-white/80 text-[#1E1A17] border-[#E08B9C] font-bold text-[0.7rem] outline-none" onchange="sortProducts()">
+                <option value="relevance">🔍 Relevância</option>
+                <option value="price-asc">💰 Menor Preço</option>
+                <option value="local-first">🏪 Salvador Primeiro</option>
+            </select>
+        </div>
+        <div class="flex gap-2 mb-5 overflow-x-auto pb-1 flex-wrap" id="chips-categorias">
+            <button onclick="filterCategory('todos')" class="chip-modernista active">🏠 Todos</button>
+            <button onclick="filterCategory('papeis')" class="chip-modernista">📜 Papéis</button>
+            <button onclick="filterCategory('desenho')" class="chip-modernista">✏️ Desenho</button>
+            <button onclick="filterCategory('tintas')" class="chip-modernista">🎨 Tintas</button>
+            <button onclick="filterCategory('pinceis')" class="chip-modernista">🖌️ Pincéis</button>
+            <button onclick="filterCategory('escultura')" class="chip-modernista">🗿 Escultura</button>
+            <button onclick="filterCategory('gravura')" class="chip-modernista">🖨️ Gravura</button>
+            <button onclick="filterCategory('ceramica')" class="chip-modernista">🏺 Cerâmica</button>
+            <button onclick="filterCategory('quimicos')" class="chip-modernista">⚗️ Químicos</button>
+            <button onclick="filterCategory('ferramentas')" class="chip-modernista">🔧 Ferramentas</button>
+            <button onclick="filterCategory('grafica')" class="chip-modernista">🖼️ Gráfica</button>
+        </div>
+
+        <!-- GRADE DE PRODUTOS -->
+        <div id="products-grid" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"></div>
+
+        <!-- SEÇÃO QUÍMICOS -->
+        <div class="mt-12 mb-4" id="secao-quimicos">
+            <div class="linha-tarsila mb-3 w-full"></div>
+            <h2 class="text-2xl brand-font text-[#D4413B] mb-1">⚗️ Químicos pra Cerâmica</h2>
+            <p class="text-xs text-gray-600 mb-4">Óxidos metálicos, carbonatos e fritas. <a href="https://pt.ceramic.school/understanding-glaze-components-part-4-colorants/" target="_blank" class="text-[#3B6B7D] font-bold underline">Fonte: The Ceramic School</a></p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="quimicos-grid"></div>
+        </div>
+
+        <!-- FORNOS NA BAHIA -->
+        <div class="mt-10 mb-4">
+            <div class="linha-tarsila mb-3 w-full"></div>
+            <h2 class="text-2xl brand-font text-[#D4413B] mb-1">🔥 Onde Queimar em Salvador</h2>
+            <p class="text-xs text-gray-600 mb-4">Ateliês com serviço de queima na região metropolitana.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="fornos-bahia-grid"></div>
+        </div>
+
+        <!-- FORNOS PELO BRASIL -->
+        <div class="mt-8 mb-4">
+            <h2 class="text-xl brand-font text-[#D4413B] mb-3">🌎 Fornos pelo Brasil</h2>
+            <p class="text-xs text-gray-600 mb-3">Lista colaborativa. <a href="https://escola.vidafeitaamao.com.br/lista-de-fornos-do-brasil/" target="_blank" class="text-[#3B6B7D] font-bold underline">Fonte: Vida Feita à Mão</a></p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[400px] overflow-y-auto pr-1" id="fornos-brasil-grid"></div>
+        </div>
+
+        <!-- MAPA -->
+        <div class="mt-10 mb-4">
+            <div class="linha-tarsila mb-3 w-48"></div>
+            <h2 class="text-2xl brand-font text-[#D4413B] mb-3">📍 Lojas em Salvador</h2>
+            <div id="mapid"></div>
+        </div>
+
+        <!-- GRÁFICAS -->
+        <div class="mt-10 mb-4" id="secao-grafica">
+            <div class="linha-tarsila mb-3 w-40"></div>
+            <h2 class="text-2xl brand-font text-[#D4413B] mb-3">🖼️ Promoções em Gráficas</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="grafica-grid"></div>
+        </div>
+
+        <!-- LOJAS FÍSICAS -->
+        <div class="mt-8 mb-4">
+            <h2 class="text-xl brand-font text-[#D4413B] mb-3">🏪 Lojas Físicas</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="lojas-bahia-grid"></div>
+        </div>
+
+    </main>
+
+    <!-- NAV INFERIOR -->
+    <nav class="bottom-nav md:hidden" id="bottom-nav">
+        <button onclick="filterCategory('todos')" class="active-nav" data-cat="todos"><i class="fa-solid fa-house"></i> Início</button>
+        <button onclick="filterCategory('tintas')" data-cat="tintas"><i class="fa-solid fa-palette"></i> Tintas</button>
+        <button onclick="filterCategory('ceramica')" data-cat="ceramica"><i class="fa-solid fa-fire"></i> Cerâmica</button>
+        <button onclick="filterCategory('grafica')" data-cat="grafica"><i class="fa-solid fa-print"></i> Gráfica</button>
+        <button onclick="scrollToMapa()"><i class="fa-solid fa-map-location-dot"></i> Mapa</button>
+    </nav>
+
+    <!-- MODAL -->
+    <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-[200] backdrop-blur-sm p-2">
+        <div class="card-tarsila w-full max-w-lg max-h-[88vh] overflow-y-auto relative mx-auto" style="border-color: var(--vermelhao);">
+            <button onclick="closeModal()" class="sticky top-3 float-right right-3 text-[#D4413B] bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg text-xl z-20 font-black">✕</button>
+            <div id="modal-content" class="p-5 pt-2"></div>
+        </div>
+    </div>
+
+    <footer class="text-center text-[0.6rem] text-gray-500 py-4 pb-20 md:pb-6">
+        <div class="linha-tarsila w-32 mx-auto mb-2"></div>
+        <p>© 2026 Corre do Artista Baiano · GitHub Pages</p>
+    </footer>
+
+    <script>
+        (function() {
+            // ==================== DADOS ====================
+            const productsData = [
+                { id: 'papel-nacional', category: 'papeis', name: 'Bloco Aquarela Montval 200g A4', emoji: '📜', desc: 'Papel celulose nacional. Aguenta lavagens e raspagens.', offers: [
+                    { store: 'Papelaria São Bento (Centro)', price: 32.90, isBest: true, isLocal: true, address: 'Rua Carlos Gomes, Centro', lat: -12.9716, lng: -38.5108 },
+                    { store: 'Kalunga (Shopping)', price: 36.50, isLocal: true, lat: -12.9815, lng: -38.4640 },
+                    { store: 'Amazon', price: 42.00 }, { store: 'Shopee', price: 45.90, freteGratis: true }
+                ]},
+                { id: 'papel-canson', category: 'papeis', name: 'Bloco Canson Graduate 300g A4', emoji: '📄', desc: '300g, textura fina.', offers: [
+                    { store: 'Amazon', price: 55.00, isBest: true }, { store: 'Kalunga', price: 59.90, isLocal: true }
+                ]},
+                { id: 'papel-kraft', category: 'papeis', name: 'Papel Kraft 200g (metro)', emoji: '📦', desc: 'Carvão e pastel.', offers: [
+                    { store: 'Kalunga (Av. Sete)', price: 2.50, isBest: true, isLocal: true, unit: '/m' }
+                ]},
+                { id: 'caneta-uni', category: 'desenho', name: 'Kit 6 Nanquim Uni Pin', emoji: '✒️', desc: 'Nanquim nacional.', offers: [
+                    { store: 'Shopee', price: 39.90, isBest: true, freteGratis: true },
+                    { store: 'Casa do Artista', price: 48.00, isLocal: true, address: 'Rua da Ajuda' }
+                ]},
+                { id: 'lapis-faber', category: 'desenho', name: 'Lápis Cor Faber 24 Cores', emoji: '🖍️', desc: 'Escolar Faber.', offers: [
+                    { store: 'Shopee', price: 28.90, isBest: true, freteGratis: true }
+                ]},
+                { id: 'aquarela-acrilex', category: 'tintas', name: 'Aquarela Acrilex 12 Cores', emoji: '🎨', desc: 'Nacional, barata.', offers: [
+                    { store: 'Armarinho Central', price: 18.00, isBest: true, isLocal: true, address: 'Feira de São Joaquim' }
+                ]},
+                { id: 'acrilica-acrilex', category: 'tintas', name: 'Acrílica Acrilex Fosca 120ml', emoji: '🖌️', desc: 'Fosca, secagem rápida.', offers: [
+                    { store: 'Mercado Livre', price: 14.90, isBest: true }
+                ]},
+                { id: 'pinceis-kit', category: 'pinceis', name: 'Kit 5 Pincéis Sintéticos', emoji: '🖌️', desc: 'Chato + redondo.', offers: [
+                    { store: 'Feira de São Joaquim', price: 12.00, isBest: true, isLocal: true }
+                ]},
+                { id: 'argila-escolar', category: 'escultura', name: 'Argila Escolar 1kg', emoji: '🧱', desc: 'Seca ao ar.', offers: [
+                    { store: 'Armarinho Central', price: 8.00, isBest: true, isLocal: true }
+                ]},
+                { id: 'goivas-kit', category: 'gravura', name: 'Kit 6 Goivas Linóleo', emoji: '🔪', desc: 'Lâminas intercambiáveis.', offers: [
+                    { store: 'Shopee', price: 45.00, isBest: true, freteGratis: true }
+                ]},
+                { id: 'argila-ceramica', category: 'ceramica', name: 'Argila Alta Temperatura 5kg', emoji: '🏺', desc: 'Queima 1240°C.', offers: [
+                    { store: 'Zeramics', price: 45.00, isBest: true }
+                ]},
+                { id: 'forno-ceramica', category: 'ceramica', name: 'Forno Elétrico Jung 1300°C', emoji: '🔥', desc: 'Forno profissional.', offers: [
+                    { store: 'Jung', price: 5480.00, isBest: true }
+                ]},
+                { id: 'oxido-ferro', category: 'quimicos', name: 'Óxido de Ferro Vermelho 100g', emoji: '🔴', desc: 'Corante versátil.', offers: [
+                    { store: 'Zeramics', price: 25.00, isBest: true }
+                ]},
+                { id: 'oxido-cobalto', category: 'quimicos', name: 'Carbonato de Cobalto 50g', emoji: '🔵', desc: 'Azul intenso.', offers: [
+                    { store: 'Zeramics', price: 35.00, isBest: true }
+                ]},
+                { id: 'fritas', category: 'quimicos', name: 'Frita Transparente 1kg', emoji: '⚪', desc: 'Base para esmaltes.', offers: [
+                    { store: 'Risi', price: 22.00, isBest: true }
+                ]},
+                { id: 'estilete', category: 'ferramentas', name: 'Estilete Profissional', emoji: '🔪', desc: 'Com 10 lâminas.', offers: [
+                    { store: 'Kalunga', price: 15.00, isBest: true, isLocal: true }
+                ]},
+            ];
+
+            const quimicosData = [
+                { nome: 'Óxido de Ferro Vermelho (Fe₂O₃)', cor: 'Vermelho a marrom', temp: 'Todas', efeito: 'Tons caramelados, pintas.', preco: 'R$ 25,00 (100g)' },
+                { nome: 'Carbonato de Cobalto (CoCO₃)', cor: 'Azul intenso', temp: 'Todas', efeito: 'Azul profundo com 1%.', preco: 'R$ 35,00 (50g)' },
+                { nome: 'Carbonato de Cobre (CuCO₃)', cor: 'Verde / Vermelho', temp: 'Baixa a média', efeito: 'Verde em oxidação.', preco: 'R$ 30,00 (50g)' },
+                { nome: 'Óxido de Cromo (Cr₂O₃)', cor: 'Verde fosco', temp: 'Todas', efeito: 'Estável, opaco.', preco: 'R$ 28,00 (50g)' },
+                { nome: 'Rutilo (FeTiO₃)', cor: 'Bronze, caramelo', temp: 'Média a alta', efeito: 'Marmorizados.', preco: 'R$ 80,00 (150g)' },
+                { nome: 'Frita Transparente', cor: 'Base vítrea', temp: 'Variável', efeito: 'Sílica + fundentes.', preco: 'R$ 22,00 (1kg)' },
+            ];
+
+            const fornosBahiaData = [
+                { nome: 'Ateliê BarroBahia', cidade: 'Salvador', contato: 'Instagram @ateliebarrobahia', tipo: 'Alta temperatura', desc: 'Consulte serviço de queima.' },
+                { nome: 'Ateliê Terra Cozida', cidade: 'Salvador', contato: 'WhatsApp (71) 98254-6164', tipo: 'Elétrico', desc: 'Espaço de criação.' },
+                { nome: 'Regulus Fornos', cidade: 'Camaçari', contato: 'Facebook @regulusfornos', tipo: 'Fabricante', desc: 'Fornos automatizados.' },
+            ];
+
+            const fornosBrasilData = [
+                { cidade: 'Aracaju (SE)', nome: 'Ateliê Matéria Prima', contato: '(79) 99979-0317', temp: '980-1240°C', tipo: 'Elétrico/Gás' },
+                { cidade: 'Belo Horizonte (MG)', nome: 'Ateliê Siqueira', contato: '(31) 99939-1086', temp: '980-1240°C', tipo: 'Elétrico' },
+                { cidade: 'São Paulo (SP)', nome: 'Cerâmica Nalle', contato: '(19) 99784-1349', temp: '980-1240°C', tipo: 'Elétrico' },
+                { cidade: 'Rio de Janeiro (RJ)', nome: 'Shoyu Crafts', contato: 'Site', temp: 'Biscoito e alta', tipo: 'Elétrico' },
+                { cidade: 'Cascavel (PR)', nome: 'Grolli Cerâmicas', contato: '(45) 99953-7070', temp: '980-1240°C', tipo: 'Elétrico' },
+            ];
+
+            const lojasBahiaData = [
+                { nome: 'Papelaria São Bento', endereco: 'Rua Carlos Gomes, Centro', desc: 'Preço bom em papel e bloco.', icon: '📜', lat: -12.9716, lng: -38.5108 },
+                { nome: 'Casa do Artista', endereco: 'Rua da Ajuda, Centro Histórico', desc: 'Materiais artísticos finos.', icon: '🎨', lat: -12.9730, lng: -38.5125 },
+                { nome: 'Kalunga (Av. Sete)', endereco: 'Av. Sete de Setembro', desc: 'Variedade e preço competitivo.', icon: '🏢', lat: -12.9800, lng: -38.5100 },
+                { nome: 'Feira de São Joaquim', endereco: 'Av. Eng. Oscar Pontes', desc: 'Pigmentos e materiais baratos.', icon: '🏪', lat: -12.9500, lng: -38.4950 },
+            ];
+
+            const graficaData = [
+                { nome: 'Gráfica Rápida Salvador', servico: 'Impressão Fine Art A4 (10 un.)', preco: 35.00, desc: 'Papel fotográfico 250g.', icon: '🖼️', destaque: true },
+                { nome: 'Print Arte Bahia', servico: 'Banner Lona 1x1m', preco: 45.00, desc: 'Lona com ilhós.', icon: '🎪' },
+                { nome: 'Copiadora Centro', servico: 'Encadernação Espiral (até 100fls)', preco: 12.00, desc: 'Sketchbook artesanal.', icon: '📒', destaque: true },
+            ];
+
+            // ==================== ESTADO ====================
+            let currentCategory = 'todos', currentSort = 'relevance', map;
+
+            function getStoreClass(n) {
+                if (n.includes('Mercado Livre')) return 'store-ml';
+                if (n.includes('Amazon')) return 'store-amazon';
+                if (n.includes('Shopee')) return 'store-shopee';
+                if (n.includes('AliExpress')) return 'store-ali';
+                if (n.includes('Kalunga')) return 'store-kalunga';
+                return 'store-local';
+            }
+
+            const formatCurrency = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            function renderProducts(products) {
+                const grid = document.getElementById('products-grid');
+                grid.innerHTML = !products.length ? '<p class="col-span-full text-center text-gray-500 py-12 text-sm">🔍 Nada encontrado.</p>' : '';
+                products.forEach(p => {
+                    const best = p.offers.find(o => o.isBest) || p.offers[0];
+                    const card = document.createElement('div');
+                    card.className = 'card-tarsila flex flex-col h-full overflow-hidden cursor-pointer relative';
+                    card.onclick = () => showDetails(p.id);
+                    card.innerHTML = `
+                        <div class="relative h-36 sm:h-44 overflow-hidden bg-white/70 flex items-center justify-center">
+                            <span class="text-6xl">${p.emoji||'📦'}</span>
+                            ${best.isLocal ? '<span class="badge-store store-local absolute top-2 right-2 text-[0.55rem]"><i class="fa-solid fa-map-pin"></i> Salvador</span>' : ''}
+                        </div>
+                        <div class="p-3 flex flex-col flex-grow">
+                            <span class="text-[0.55rem] uppercase text-[#D4413B] font-black">${p.category}</span>
+                            <h3 class="text-sm font-extrabold leading-tight mb-1 line-clamp-2">${p.name}</h3>
+                            <p class="text-[0.6rem] text-gray-500 line-clamp-1">${p.desc}</p>
+                            <div class="mt-auto pt-2 border-t border-[rgba(212,65,59,0.15)]">
+                                <span class="preco-destaque text-base">${formatCurrency(best.price)}</span>
+                                <span class="text-[0.55rem] text-gray-400 ml-1">${best.unit||''}</span>
+                            </div>
+                        </div>`;
+                    grid.appendChild(card);
+                });
+            }
+
+            function renderQuimicos() {
+                const grid = document.getElementById('quimicos-grid');
+                grid.innerHTML = '';
+                quimicosData.forEach(q => {
+                    const card = document.createElement('div');
+                    card.className = 'card-tarsila p-4';
+                    card.innerHTML = `<h4 class="font-extrabold text-[#D4413B] text-sm">${q.nome}</h4>
+                        <p class="text-[0.6rem] text-gray-500 mt-1"><strong>Cor:</strong> ${q.cor} | <strong>Temp:</strong> ${q.temp}</p>
+                        <p class="text-[0.65rem] text-gray-700 mt-1">${q.efeito}</p>
+                        <div class="flex justify-between items-center mt-2"><span class="font-black text-sm text-[#2D5A4B]">${q.preco}</span></div>`;
+                    grid.appendChild(card);
+                });
+            }
+
+            function renderFornosBahia() {
+                const grid = document.getElementById('fornos-bahia-grid');
+                grid.innerHTML = '';
+                fornosBahiaData.forEach(f => {
+                    const card = document.createElement('div');
+                    card.className = 'card-tarsila p-4';
+                    card.innerHTML = `<h4 class="font-extrabold text-[#D4413B] text-sm">${f.nome}</h4>
+                        <p class="text-[0.6rem] text-gray-500"><i class="fa-solid fa-location-dot mr-1"></i> ${f.cidade}</p>
+                        <p class="text-[0.65rem] text-gray-700 mt-1">${f.desc}</p>
+                        <p class="text-[0.6rem] text-gray-500"><strong>Tipo:</strong> ${f.tipo} | <strong>Contato:</strong> ${f.contato}</p>`;
+                    grid.appendChild(card);
+                });
+            }
+
+            function renderFornosBrasil() {
+                const grid = document.getElementById('fornos-brasil-grid');
+                grid.innerHTML = '';
+                fornosBrasilData.forEach(f => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white/70 p-3 rounded-xl border border-[#E08B9C] text-[0.65rem]';
+                    card.innerHTML = `<strong class="text-[#D4413B]">${f.cidade}</strong> — ${f.nome}<br><span class="text-gray-500">${f.contato} · ${f.temp} · ${f.tipo}</span>`;
+                    grid.appendChild(card);
+                });
+            }
+
+            function renderLojas() {
+                const grid = document.getElementById('lojas-bahia-grid');
+                grid.innerHTML = '';
+                lojasBahiaData.forEach(l => {
+                    const card = document.createElement('div');
+                    card.className = 'card-tarsila p-3';
+                    card.innerHTML = `<div class="flex items-start gap-3"><span class="text-2xl">${l.icon}</span><div>
+                        <h4 class="font-extrabold text-[#D4413B] text-sm">${l.nome}</h4>
+                        <p class="text-[0.6rem] text-gray-500">${l.endereco}</p>
+                        <a href="https://www.google.com/maps?q=${encodeURIComponent(l.endereco+', Salvador, BA')}" target="_blank" class="text-[0.6rem] text-[#3B6B7D] font-bold mt-1 inline-block"><i class="fa-solid fa-map-pin mr-1"></i> Abrir no Mapa</a></div></div>`;
+                    grid.appendChild(card);
+                });
+            }
+
+            function renderGrafica() {
+                const grid = document.getElementById('grafica-grid');
+                grid.innerHTML = '';
+                graficaData.forEach(g => {
+                    const card = document.createElement('div');
+                    card.className = 'card-tarsila p-3' + (g.destaque ? ' border-[#F3B33D] border-[3px]' : '');
+                    card.innerHTML = `<div class="flex items-start gap-3"><span class="text-2xl">${g.icon}</span><div class="flex-1">
+                        <h4 class="font-extrabold text-[#D4413B] text-sm">${g.nome}</h4>
+                        <p class="text-[0.65rem] font-bold text-gray-700">${g.servico}</p>
+                        <p class="text-[0.6rem] text-gray-500">${g.desc}</p>
+                        <div class="flex items-center justify-between mt-2">
+                        <span class="preco-destaque text-base">${formatCurrency(g.preco)}</span>
+                        ${g.destaque?'<span class="bg-[#F3B33D] text-[#1E1A17] text-[0.55rem] px-2 py-0.5 rounded-full font-black">PROMO</span>':''}
+                        </div></div></div>`;
+                    grid.appendChild(card);
+                });
+            }
+
+            function initMap() {
+                if (!document.getElementById('mapid')) return;
+                map = L.map('mapid').setView([-12.9714, -38.5014], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+                lojasBahiaData.forEach(l => L.marker([l.lat, l.lng]).addTo(map).bindPopup(`<strong>${l.nome}</strong><br>${l.endereco}`));
+                setTimeout(() => map.invalidateSize(), 200);
+            }
+
+            function updateUI(cat) {
+                currentCategory = cat;
+                document.querySelectorAll('.chip-modernista').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.chip-modernista').forEach(b => {
+                    if (b.getAttribute('onclick').includes(`'${cat}'`)) b.classList.add('active');
+                });
+                document.querySelectorAll('#bottom-nav button[data-cat]').forEach(b => b.classList.remove('active-nav'));
+                const navBtn = document.querySelector(`#bottom-nav button[data-cat="${cat}"]`);
+                if (navBtn) navBtn.classList.add('active-nav');
+                const titles = { 'todos':'🌿 Todos','papeis':'📜 Papéis','desenho':'✏️ Desenho','tintas':'🎨 Tintas','pinceis':'🖌️ Pincéis','escultura':'🗿 Escultura','gravura':'🖨️ Gravura','ceramica':'🏺 Cerâmica','quimicos':'⚗️ Químicos','ferramentas':'🔧 Ferramentas','grafica':'🖼️ Gráfica' };
+                document.getElementById('section-title').textContent = titles[cat] || 'Achados';
+                applyFiltersAndSort();
+            }
+
+            function filterCategory(cat) {
+                updateUI(cat);
+                if (cat === 'quimicos') document.getElementById('secao-quimicos').scrollIntoView({ behavior: 'smooth' });
+                else if (cat === 'grafica') document.getElementById('secao-grafica').scrollIntoView({ behavior: 'smooth' });
+                else if (cat === 'ceramica') document.getElementById('secao-quimicos').scrollIntoView({ behavior: 'smooth' });
+                else window.scrollTo({ top: 200, behavior: 'smooth' });
+            }
+
+            function sortProducts() { currentSort = document.getElementById('sort-select').value; applyFiltersAndSort(); }
+
+            function applyFiltersAndSort() {
+                let filtered = [...productsData];
+                if (currentCategory !== 'todos' && currentCategory !== 'grafica' && currentCategory !== 'quimicos') {
+                    filtered = filtered.filter(p => p.category === currentCategory);
+                }
+                if (currentCategory === 'grafica' || currentCategory === 'quimicos') filtered = [];
+                if (currentSort === 'price-asc') filtered.sort((a,b) => (a.offers.find(o=>o.isBest)||a.offers[0]).price - (b.offers.find(o=>o.isBest)||b.offers[0]).price);
+                else if (currentSort === 'local-first') filtered.sort((a,b) => ((b.offers.find(o=>o.isBest)||b.offers[0]).isLocal?1:0) - ((a.offers.find(o=>o.isBest)||a.offers[0]).isLocal?1:0));
+                renderProducts(filtered);
+            }
+
+            function scrollToMapa() { document.getElementById('mapid').scrollIntoView({ behavior: 'smooth' }); if (map) setTimeout(() => map.invalidateSize(), 300); }
+
+            // MODAL
+            const modal = document.getElementById('product-modal'), modalContent = document.getElementById('modal-content');
+            function showDetails(pid) {
+                const p = productsData.find(x => x.id === pid); if (!p) return;
+                const sorted = [...p.offers].sort((a,b) => a.price - b.price);
+                const savings = sorted.length>1 ? sorted[sorted.length-1].price - sorted[0].price : 0;
+                let html = sorted.map((o,i) => {
+                    const pct = i===0 && savings>0 ? Math.round((savings/sorted[sorted.length-1].price)*100) : 0;
+                    return `<div class="flex items-center justify-between p-3 mb-2 rounded-2xl border flex-wrap gap-2 ${i===0?'bg-[#FEF9E7] border-[#F3B33D] shadow-sm':'border-gray-200'}">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="badge-store ${getStoreClass(o.store)}">${o.store}</span>
+                            ${i===0?'<span class="text-[0.6rem] text-[#D4413B] font-black">🔥 Melhor</span>':''}
+                            ${o.isLocal?'<span class="text-[0.6rem] text-[#2D5A4B] font-black"><i class="fa-solid fa-map-pin"></i> Salvador</span>':''}
+                            ${pct>0&&i===0?`<span class="text-[0.55rem] bg-[#2D5A4B] text-white px-1.5 py-0.5 rounded-full font-black">-${pct}%</span>`:''}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-black text-base ${i===0?'text-[#D4413B]':'text-gray-700'}">${formatCurrency(o.price)}</span>
+                            <a href="${o.link||'#'}" class="btn-antropofagico text-[0.6rem] px-3 py-1" onclick="event.stopPropagation()" target="_blank">Ir</a>
+                        </div>
+                        ${o.address?`<p class="w-full text-[0.6rem] text-gray-500"><i class="fa-solid fa-location-dot"></i> ${o.address}</p>`:''}
+                    </div>`;
+                }).join('');
+                modalContent.innerHTML = `
+                    <div class="flex flex-col gap-4">
+                        <div class="bg-white p-4 rounded-2xl flex items-center justify-center border-2 border-dashed border-[#D4413B]"><span class="text-8xl">${p.emoji||'📦'}</span></div>
+                        <div>
+                            <span class="text-[0.65rem] uppercase text-[#D4413B] font-black">${p.category}</span>
+                            <h2 class="text-2xl mb-1 text-[#D4413B]">${p.name}</h2>
+                            <p class="text-sm text-gray-700 mb-2">${p.desc}</p>
+                            ${savings>0?`<div class="bg-[#FEF9E7] p-2 rounded-2xl mb-2 text-[0.7rem] font-black text-[#2D5A4B]">💰 Economia de até ${formatCurrency(savings)}</div>`:''}
+                            <h4 class="brand-font text-xl text-[#D4413B] mb-2 border-b-2 border-[#F3B33D] pb-1">📍 Onde Comprar</h4>
+                            <div class="max-h-[45vh] overflow-y-auto">${html}</div>
+                            <p class="text-[0.55rem] text-gray-400 text-center mt-2">Preços simulados.</p>
+                        </div>
+                    </div>`;
+                modal.style.display = 'flex'; document.body.style.overflow = 'hidden';
+            }
+            function closeModal() { modal.style.display = 'none'; document.body.style.overflow = ''; }
+            window.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+            window.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+            // PWA
+            let deferredPrompt;
+            window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('btn-instalar').classList.remove('hidden'); });
+            window.instalarApp = function() {
+                if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(() => { deferredPrompt = null; document.getElementById('btn-instalar').classList.add('hidden'); }); }
+                else if (/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())) alert('📲 No Safari, toque em compartilhar > Adicionar à Tela de Início');
+            };
+
+            if ('serviceWorker' in navigator) {
+                const swCode = "const CACHE='corre-artista-gh';self.addEventListener('install',e=>{self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))));self.clients.claim()});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request).then(r=>{if(r.ok){const cl=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,cl))}return r}).catch(()=>c||new Response('Offline',{status:503}))))});";
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                updateUI('todos');
+                renderQuimicos(); renderFornosBahia(); renderFornosBrasil(); renderLojas(); renderGrafica();
+                initMap();
+            });
+
+            window.filterCategory = filterCategory;
+            window.sortProducts = sortProducts;
+            window.showDetails = showDetails;
+            window.closeModal = closeModal;
+            window.scrollToMapa = scrollToMapa;
+        })();
+    </script>
+</body>
+</html>
